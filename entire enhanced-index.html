@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sydney Rent - ENHANCED FIXED</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { margin: 20px; font-family: Arial; background: #f0f2f5; }
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 300px 1fr; gap: 30px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        #map { height: 600px; width: 100%; border-radius: 10px; border: 3px solid #667eea; }
+        .btn { padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; margin: 5px; cursor: pointer; }
+        .btn:hover { background: #5a6fd8; }
+    </style>
+</head>
+<body>
+    <h1>🏠 Sydney Rent - ENHANCED & WORKING</h1>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Controls</h2>
+            <p>Select bedrooms:</p>
+            <button class="btn" onclick="filterMarkers(1)">1 Bed</button>
+            <button class="btn" onclick="filterMarkers(2)">2 Beds</button>
+            <button class="btn" onclick="filterMarkers(3)">3 Beds</button>
+            <button class="btn" onclick="filterMarkers(4)">4+ Beds</button>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f8f9ff; border-radius: 10px;">
+                <h3>Map Info</h3>
+                <p id="info">Loading data...</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Sydney Rental Map</h2>
+            <div id="map"></div>
+        </div>
+    </div>
+    
+    <!-- Load libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Load data with ABSOLUTE URL to guarantee it loads -->
+    <script src="https://barnabypekinstores-Git.github.io/sydney-rent-map/data.js"></script>
+    
+    <script>
+        console.log('=== ENHANCED FIXED VERSION ===');
+        
+        let map;
+        let markers = [];
+        let currentBedrooms = 1;
+        
+        // WAIT for data to load
+        window.addEventListener('load', function() {
+            console.log('Page loaded, checking data...');
+            
+            if (!window.sydneySuburbs) {
+                console.error('❌ ERROR: sydneySuburbs not loaded!');
+                document.getElementById('info').innerHTML = 
+                    '<span style="color:red">❌ ERROR: data.js not found</span>';
+                return;
+            }
+            
+            console.log('✅ Data loaded:', sydneySuburbs.length, 'suburbs');
+            initMap();
+        });
+        
+        function initMap() {
+            // Create map
+            map = L.map('map').setView([-33.8688, 151.2093], 11);
+            
+            // Add map tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            
+            // Add enhanced markers
+            updateMarkers();
+            
+            document.getElementById('info').innerHTML = 
+                `<span style="color:green">✅ Showing ${sydneySuburbs.length} Sydney suburbs</span>`;
+        }
+        
+        function updateMarkers() {
+            // Clear old markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            // Add enhanced markers
+            sydneySuburbs.forEach((suburb, index) => {
+                const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0'];
+                const color = colors[index % colors.length];
+                
+                // Create custom icon
+                const icon = L.divIcon({
+                    html: `
+                        <div style="
+                            background: ${color};
+                            width: 28px;
+                            height: 28px;
+                            border-radius: 50%;
+                            border: 4px solid white;
+                            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-weight: bold;
+                            font-size: 12px;
+                        ">${index + 1}</div>
+                    `,
+                    iconSize: [36, 36]
+                });
+                
+                const marker = L.marker([suburb.lat, suburb.lng], { icon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="min-width: 220px; padding: 15px;">
+                            <h3 style="margin: 0 0 10px 0; color: #333;">${suburb.name}</h3>
+                            <div style="background: ${color}; padding: 8px 12px; border-radius: 6px; color: white; margin-bottom: 15px;">
+                                <strong>Marker ${index + 1}</strong>
+                            </div>
+                            <p><strong>Location:</strong><br>${suburb.lat.toFixed(4)}, ${suburb.lng.toFixed(4)}</p>
+                            <p><strong>Showing for:</strong> ${currentBedrooms} bedroom(s)</p>
+                            <p><em>Rent data would display here</em></p>
+                        </div>
+                    `);
+                
+                markers.push(marker);
+            });
+            
+            console.log('✅ Added', markers.length, 'enhanced markers');
+        }
+        
+        function filterMarkers(bedrooms) {
+            currentBedrooms = bedrooms;
+            updateMarkers();
+            document.getElementById('info').innerHTML = 
+                `<span style="color:green">✅ Showing ${sydneySuburbs.length} suburbs for ${bedrooms} bedroom(s)</span>`;
+        }
+        
+        console.log('=== SETUP COMPLETE ===');
+    </script>
+</body>
+</html>
