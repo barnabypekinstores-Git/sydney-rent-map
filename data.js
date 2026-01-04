@@ -4,4 +4,4 @@ const sydneySuburbs = [
     {name: "Newtown", lat: -33.898, lng: 151.178}
 ];
 
-console.log('✅ data.js loaded with', suburbs.length, 'suburbs');
+console.log('✅ data.js loaded with', sydneySuburbs.length, 'suburbs');

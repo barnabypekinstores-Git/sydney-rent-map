@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>#map { height: 500px; border: 3px solid red; }</style>
+</head>
+<body>
+    <h1>DEBUG TEST - Should show 3 markers</h1>
+    <div id="map"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="data.js"></script>
+    <script>
+        console.log('=== DEBUG START ===');
+        console.log('1. Leaflet loaded?', typeof L !== 'undefined');
+        console.log('2. Data loaded?', typeof sydneySuburbs !== 'undefined');
+        
+        if (window.sydneySuburbs) {
+            console.log('3. Number of suburbs:', sydneySuburbs.length);
+            console.log('4. First suburb:', sydneySuburbs[0]);
+            console.log('5. Has lat/lng?', 
+                       sydneySuburbs[0].lat, sydneySuburbs[0].lng);
+        }
+        
+        // Create map
+        try {
+            const map = L.map('map').setView([-33.8688, 151.2093], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            console.log('6. Map created successfully');
+            
+            // Add markers
+            if (sydneySuburbs && sydneySuburbs.length > 0) {
+                sydneySuburbs.forEach(s => {
+                    L.marker([s.lat, s.lng])
+                        .addTo(map)
+                        .bindPopup(s.name);
+                });
+                console.log('7. Markers added:', sydneySuburbs.length);
+            }
+        } catch (error) {
+            console.error('8. ERROR:', error.message);
+        }
+        
+        console.log('=== DEBUG END ===');
+    </script>
+</body>
+</html>
