@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sydney Rent Map - ENHANCED</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- NEW: Better Styles -->
+    <style>
+        /* Your original styles PLUS enhancements */
+        body { 
+            margin: 0; 
+            padding: 20px; 
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        
+        /* ENHANCEMENT: Better Map */
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 10px;
+            border: 3px solid #e0e0e0;
+        }
+        
+        /* ENHANCEMENT: Interactive Markers */
+        .leaflet-marker-icon {
+            transition: transform 0.2s;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
+        }
+        
+        .leaflet-marker-icon:hover {
+            transform: scale(1.3);
+        }
+        
+        /* ENHANCEMENT: Rent Calculator */
+        .calculator {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .calculator input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .calculator button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        
+        /* ENHANCEMENT: Mobile Friendly */
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            #map {
+                height: 400px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <h1><i class="fas fa-home"></i> Sydney Rent Map - ENHANCED VERSION</h1>
+    
+    <div class="container">
+        <!-- LEFT: Calculator & Controls -->
+        <div class="card">
+            <h2><i class="fas fa-calculator"></i> Rent Calculator</h2>
+            
+            <div class="calculator">
+                <label>Annual Income ($):</label>
+                <input type="range" id="income-slider" min="30000" max="200000" value="85000">
+                <div id="income-display" style="font-size: 2rem; color: #667eea; text-align: center;">$85,000</div>
+                
+                <label>Bedrooms:</label>
+                <div style="display: flex; gap: 10px; margin: 15px 0;">
+                    <button class="bed-btn active" data-beds="1">1</button>
+                    <button class="bed-btn" data-beds="2">2</button>
+                    <button class="bed-btn" data-beds="3">3</button>
+                    <button class="bed-btn" data-beds="4">4+</button>
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Max Weekly Rent:</span>
+                        <strong style="color: #667eea; font-size: 1.2rem;" id="weekly-rent">$490</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                        <span>Monthly Budget:</span>
+                        <strong style="color: #667eea; font-size: 1.2rem;" id="monthly-budget">$2,125</strong>
+                    </div>
+                </div>
+                
+                <button id="calculate-btn">
+                    <i class="fas fa-search"></i> Find Affordable Suburbs
+                </button>
+            </div>
+            
+            <!-- Legend -->
+            <div style="margin-top: 30px;">
+                <h3><i class="fas fa-key"></i> Legend</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 20px; height: 20px; background: #4CAF50; border-radius: 50%;"></div>
+                        <span>Highly Affordable (&lt;70% of budget)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 20px; height: 20px; background: #FFC107; border-radius: 50%;"></div>
+                        <span>Moderate (70-90% of budget)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 20px; height: 20px; background: #F44336; border-radius: 50%;"></div>
+                        <span>Less Affordable (&gt;90% of budget)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RIGHT: Map -->
+        <div class="card">
+            <h2><i class="fas fa-map-marked-alt"></i> Sydney Rental Map</h2>
+            <div id="map"></div>
+            
+            <!-- Recommendations -->
+            <div style="margin-top: 25px; padding: 20px; background: #f0f7ff; border-radius: 10px;">
+                <h3><i class="fas fa-star"></i> Top Recommendations</h3>
+                <div id="recommendations">
+                    <p>Use the calculator to find affordable suburbs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript Files -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Load ORIGINAL data.js (unchanged) -->
+    <script src="data.js"></script>
+    
+    <!-- NEW: Enhanced JavaScript -->
+    <script>
+        // ENHANCED VERSION - All new code
+        console.log('🚀 Enhanced Sydney Rent Map Loading...');
+        
+        let map;
+        let markers = [];
+        let currentFilters = {
+            maxRent: 490,
+            bedrooms: 1,
+            maxCommute: 45
+        };
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 Enhanced version initialized');
+            
+            // Setup calculator
+            setupCalculator();
+            
+            // Initialize map
+            initMap();
+            
+            // Set initial active button
+            document.querySelector('.bed-btn.active').style.background = '#667eea';
+            document.querySelector('.bed-btn.active').style.color = 'white';
+        });
+        
+        // Setup calculator controls
+        function setupCalculator() {
+            const incomeSlider = document.getElementById('income-slider');
+            const incomeDisplay = document.getElementById('income-display');
+            const bedButtons = document.querySelectorAll('.bed-btn');
+            const calculateBtn = document.getElementById('calculate-btn');
+            
+            // Income slider
+            incomeSlider.addEventListener('input', function() {
+                const income = parseInt(this.value);
+                incomeDisplay.textContent = '$' + income.toLocaleString();
+                updateBudget(income, currentFilters.bedrooms);
+            });
+            
+            // Bedroom buttons
+            bedButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    bedButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.style.background = '';
+                        btn.style.color = '';
+                    });
+                    this.classList.add('active');
+                    this.style.background = '#667eea';
+                    this.style.color = 'white';
+                    
+                    currentFilters.bedrooms = parseInt(this.dataset.beds);
+                    updateBudget(parseInt(incomeSlider.value), currentFilters.bedrooms);
+                });
+            });
+            
+            // Calculate button
+            calculateBtn.addEventListener('click', function() {
+                updateMapWithFilters();
+            });
+            
+            // Initial budget calculation
+            updateBudget(85000, 1);
+        }
+        
+        // Calculate budget (30% rule)
+        function updateBudget(income, bedrooms) {
+            const monthly = income / 12;
+            const housing = monthly * 0.3;
+            const weekly = housing / 4.33;
+            
+            document.getElementById('weekly-rent').textContent = 
+                '$' + Math.round(weekly).toLocaleString();
+            document.getElementById('monthly-budget').textContent = 
+                '$' + Math.round(housing).toLocaleString();
+            
+            currentFilters.maxRent = Math.round(weekly);
+        }
+        
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([-33.8688, 151.2093], 11);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            
+            // Show initial data
+            updateMapWithFilters();
+        }
+        
+        // Update map with current filters
+        function updateMapWithFilters() {
+            console.log('Updating map with filters:', currentFilters);
+            
+            // Clear old markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            if (!window.sydneySuburbs) {
+                console.error('No data loaded!');
+                return;
+            }
+            
+            // Filter suburbs
+            const filtered = sydneySuburbs.filter(suburb => {
+                const rent = suburb.medianRent[currentFilters.bedrooms] || suburb.medianRent["1"];
+                return rent <= currentFilters.maxRent;
+            });
+            
+            console.log(`Found ${filtered.length} affordable suburbs`);
+            
+            // Add markers
+            filtered.forEach(suburb => {
+                const rent = suburb.medianRent[currentFilters.bedrooms] || suburb.medianRent["1"];
+                
+                // Color based on affordability
+                let color;
+                const ratio = rent / currentFilters.maxRent;
+                
+                if (ratio < 0.7) color = '#4CAF50';
+                else if (ratio < 0.9) color = '#FFC107';
+                else color = '#F44336';
+                
+                // Custom icon
+                const icon = L.divIcon({
+                    html: `
+                        <div style="
+                            background: ${color};
+                            width: 24px;
+                            height: 24px;
+                            border-radius: 50%;
+                            border: 3px solid white;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                        "></div>
+                    `,
+                    iconSize: [30, 30]
+                });
+                
+                const marker = L.marker([suburb.lat, suburb.lng], { icon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="min-width: 220px;">
+                            <h3 style="margin: 0 0 10px 0; color: #333;">${suburb.name}</h3>
+                            <div style="margin-bottom: 10px;">
+                                <strong>${currentFilters.bedrooms}-bed rent:</strong> 
+                                <span style="color: ${color}; font-weight: bold;">$${rent}</span>
+                            </div>
+                            <div style="margin-bottom: 5px;"><strong>Commute:</strong> ${suburb.commuteCBD} min</div>
+                            <div style="margin-bottom: 5px;"><strong>Transport:</strong> ${suburb.transportScore}/10</div>
+                            <p style="color: #666; margin: 10px 0 0 0;">${suburb.description}</p>
+                        </div>
+                    `);
+                
+                markers.push(marker);
+            });
+            
+            // Update recommendations
+            updateRecommendations(filtered);
+            
+            // Adjust map view
+            if (filtered.length > 0) {
+                const bounds = L.latLngBounds(filtered.map(s => [s.lat, s.lng]));
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+        
+        // Update recommendations list
+        function updateRecommendations(suburbs) {
+            const container = document.getElementById('recommendations');
+            
+            if (suburbs.length === 0) {
+                container.innerHTML = '<p style="color: #F44336;">No suburbs match your budget. Try increasing your income.</p>';
+                return;
+            }
+            
+            // Sort by rent (cheapest first)
+            suburbs.sort((a, b) => {
+                const rentA = a.medianRent[currentFilters.bedrooms] || a.medianRent["1"];
+                const rentB = b.medianRent[currentFilters.bedrooms] || b.medianRent["1"];
+                return rentA - rentB;
+            });
+            
+            // Show top 5
+            const top5 = suburbs.slice(0, 5);
+            let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+            
+            top5.forEach((suburb, index) => {
+                const rent = suburb.medianRent[currentFilters.bedrooms] || suburb.medianRent["1"];
+                const rank = index + 1;
+                
+                html += `
+                    <div style="
+                        background: white;
+                        padding: 15px;
+                        border-radius: 8px;
+                        border-left: 4px solid ${rent < currentFilters.maxRent * 0.7 ? '#4CAF50' : '#FFC107'};
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${rank}. ${suburb.name}</strong>
+                                <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
+                                    ${suburb.commuteCBD} min commute • ${suburb.transportScore}/10 transport
+                                </div>
+                            </div>
+                            <div style="font-weight: bold; color: #667eea; font-size: 1.2rem;">
+                                $${rent}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
