@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sydney Rent Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 20px; font-family: Arial; }
+        #map { height: 600px; width: 100%; border: 2px solid black; }
+    </style>
+</head>
+<body>
+    <h1>Sydney Rent Map - TEST</h1>
+    <div id="map"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="data.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('TEST: Page loaded');
+            
+            // 1. Create map
+            const map = L.map('map').setView([-33.8688, 151.2093], 11);
+            
+            // 2. Add map background
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            // 3. Check if data loaded
+            if (window.suburbs) {
+                console.log('Found data:', suburbs.length, 'suburbs');
+                suburbs.forEach(s => {
+                    L.marker([s.lat, s.lng])
+                        .addTo(map)
+                        .bindPopup(s.name);
+                });
+            } else {
+                console.log('No data, adding test marker');
+                L.marker([-33.8688, 151.2093])
+                    .addTo(map)
+                    .bindPopup('Sydney CBD - MAP IS WORKING!');
+            }
+            
+            console.log('✅ Map should be visible now');
+        });
+    </script>
+</body>
+</html>
